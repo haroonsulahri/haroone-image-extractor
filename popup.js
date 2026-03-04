@@ -628,7 +628,7 @@
   }
 
   function updateCount(visible, total) {
-    dom.count.textContent = total && visible !== total ? `${visible}/${total} found` : `${visible} images found`;
+    dom.count.textContent = total && visible !== total ? `${visible}/${total} indexed` : `${visible} images indexed`;
   }
 
   function setStatus(message, isError = false, autoClear = true) {
@@ -771,5 +771,6 @@
     return error.message || String(error);
   }
 })();
+
 
 

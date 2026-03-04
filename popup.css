@@ -132,7 +132,7 @@ body {
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text-primary);
-  white-space: nowrap;
+  white-space: nowrap;`n  text-align: center;
 }
 
 .mini-btn {
@@ -197,7 +197,7 @@ body {
   padding: 5px 11px;
   font-size: 11px;
   cursor: pointer;
-  white-space: nowrap;
+  white-space: nowrap;`n  text-align: center;
   transition: all 0.18s ease;
 }
 
@@ -374,7 +374,7 @@ body {
   padding: 6px 7px 7px;
   font-size: 11px;
   color: var(--text-muted);
-  white-space: nowrap;
+  white-space: nowrap;`n  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -653,5 +653,6 @@ a:focus-visible {
   outline: 2px solid var(--accent-hover);
   outline-offset: 2px;
 }
+
 
 
