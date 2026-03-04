@@ -59,7 +59,16 @@
     <footer class="footer">
       <div class="footer-row actions-row">
         <button id="downloadAllBtn" class="btn btn-primary">Download All</button>
-        <button id="copyAllBtn" class="btn btn-secondary">Copy All URLs</button>
+      </div>
+
+      <div id="batchProgress" class="batch-progress" aria-live="polite">
+        <div class="progress-meta">
+          <span id="progressLabel"></span>
+          <span id="progressPercent"></span>
+        </div>
+        <div id="progressTrack" class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
       </div>
 
       <p id="statusText" class="status" aria-live="polite"></p>
@@ -70,4 +79,3 @@
   <script src="popup.js"></script>
 </body>
 </html>
-

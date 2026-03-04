@@ -8,20 +8,23 @@
     visible: [],
     filter: "ALL",
     query: "",
-    loading: false
+    loading: false,
+    batchJob: null
   };
 
   const dom = {};
   let statusTimer = null;
+  let batchPollTimer = null;
   let themeMedia = null;
 
   document.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("unload", stopBatchPolling);
 
   async function init() {
     setupThemeSync();
     cacheDom();
     bindEvents();
-    await scanActiveTab(false);
+    await Promise.all([scanActiveTab(false), hydrateBatchStatus()]);
   }
 
   function setupThemeSync() {
@@ -57,9 +60,13 @@
     dom.gridWrap = document.getElementById("gridWrapper");
     dom.grid = document.getElementById("imageGrid");
     dom.downloadAll = document.getElementById("downloadAllBtn");
-    dom.copyAll = document.getElementById("copyAllBtn");
     dom.status = document.getElementById("statusText");
     dom.filters = Array.from(document.querySelectorAll(".filter-btn"));
+    dom.progressWrap = document.getElementById("batchProgress");
+    dom.progressLabel = document.getElementById("progressLabel");
+    dom.progressPercent = document.getElementById("progressPercent");
+    dom.progressTrack = document.getElementById("progressTrack");
+    dom.progressFill = document.getElementById("progressFill");
   }
 
   function bindEvents() {
@@ -84,11 +91,7 @@
     });
 
     dom.downloadAll.addEventListener("click", async () => {
-      await downloadBatch(state.visible);
-    });
-
-    dom.copyAll.addEventListener("click", async () => {
-      await copyAllUrls();
+      await startBatchDownload();
     });
 
     document.addEventListener("keydown", (event) => {
@@ -144,6 +147,7 @@
       state.visible = [];
       showEmpty(toErrorMessage(error));
       updateCount(0, 0);
+      syncDownloadButtonState();
       setStatus(toErrorMessage(error), true);
     } finally {
       setLoading(false);
@@ -196,6 +200,7 @@
       showEmpty(state.images.length ? "No images match the current filter." : "No images found on this page.");
       dom.gridWrap.classList.add("hidden");
       dom.grid.replaceChildren();
+      syncDownloadButtonState();
       return;
     }
 
@@ -207,6 +212,8 @@
       fragment.appendChild(buildCard(image, index));
     });
     dom.grid.replaceChildren(fragment);
+
+    syncDownloadButtonState();
   }
 
   function updateFilterVisibility() {
@@ -364,54 +371,229 @@
     setStatus("Download started.");
   }
 
-  async function downloadBatch(images) {
-    if (!images || !images.length) {
+  async function startBatchDownload() {
+    if (!state.images.length) {
       setStatus("No images to download.", true);
       return;
     }
 
-    setStatus(`Preparing zip for ${images.length} image(s)...`, false, false);
-
-    const response = await chrome.runtime.sendMessage({
-      type: "IMAGERIP_DOWNLOAD_BATCH",
-      images
-    });
-
-    if (!response || !response.ok) {
-      throw new Error((response && response.error) || "Batch download failed.");
-    }
-
-    if (Array.isArray(response.failed) && response.failed.length) {
-      const failedMap = new Map();
-      for (const item of response.failed) {
-        if (item && item.url) {
-          failedMap.set(item.url, item.reason || "CORS/blocked");
-        }
-      }
-
-      for (const image of state.images) {
-        if (failedMap.has(image.url)) {
-          image.warning = `Blocked: ${failedMap.get(image.url)}`;
-        }
-      }
-
-      renderGrid();
-      const successful = Math.max(0, images.length - response.failed.length);
-      setStatus(`Zipped ${successful}/${images.length}. ${response.failed.length} blocked.`, true);
+    if (state.batchJob && isBatchRunning(state.batchJob)) {
+      startBatchPolling();
+      setStatus("Download already in progress.");
       return;
     }
 
-    setStatus("Zip download started.");
+    const payload = state.images
+      .filter((image) => image && image.url)
+      .map((image) => ({ url: image.url, format: image.format }));
+
+    if (!payload.length) {
+      setStatus("No valid image URLs found.", true);
+      return;
+    }
+
+    setStatus(`Preparing zip for ${payload.length} image(s)...`, false, false);
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: "IMAGERIP_DOWNLOAD_BATCH_START",
+        images: payload
+      });
+
+      if (!response || !response.ok) {
+        throw new Error((response && response.error) || "Batch download failed.");
+      }
+
+      applyBatchJob(response.job || null);
+      startBatchPolling();
+    } catch (error) {
+      setStatus(toErrorMessage(error), true, false);
+    }
   }
 
-  async function copyAllUrls() {
-    if (!state.visible.length) {
-      setStatus("No URLs available to copy.", true);
+  async function hydrateBatchStatus() {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: "IMAGERIP_DOWNLOAD_BATCH_STATUS" });
+      if (response && response.ok && response.job) {
+        applyBatchJob(response.job);
+        if (isBatchRunning(response.job)) {
+          startBatchPolling();
+        }
+      } else {
+        applyBatchJob(null);
+      }
+    } catch (_) {
+      applyBatchJob(null);
+    }
+  }
+
+  function startBatchPolling() {
+    if (batchPollTimer) {
       return;
     }
 
-    const text = state.visible.map((image) => image.url).join("\n");
-    await copyText(text, `${state.visible.length} URL(s) copied.`);
+    batchPollTimer = setInterval(() => {
+      void pollBatchStatus();
+    }, 500);
+  }
+
+  function stopBatchPolling() {
+    if (batchPollTimer) {
+      clearInterval(batchPollTimer);
+      batchPollTimer = null;
+    }
+  }
+
+  async function pollBatchStatus() {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: "IMAGERIP_DOWNLOAD_BATCH_STATUS" });
+      if (!response || !response.ok) {
+        throw new Error((response && response.error) || "Unable to read batch status.");
+      }
+
+      applyBatchJob(response.job || null);
+
+      if (!response.job || !isBatchRunning(response.job)) {
+        stopBatchPolling();
+      }
+    } catch (error) {
+      stopBatchPolling();
+      if (state.batchJob && isBatchRunning(state.batchJob)) {
+        setStatus(toErrorMessage(error), true);
+      }
+    }
+  }
+
+  function applyBatchJob(job) {
+    const previous = state.batchJob;
+    const wasRunning = isBatchRunning(previous);
+    state.batchJob = isBatchRunning(job) ? job : null;
+
+    renderBatchProgress(state.batchJob);
+    syncDownloadButtonState();
+
+    if (wasRunning && !state.batchJob) {
+      clearStatus();
+    }
+  }
+
+  function applyFailureWarnings(job) {
+    if (!job || !Array.isArray(job.failed) || !job.failed.length || !state.images.length) {
+      return;
+    }
+
+    const failedMap = new Map();
+    for (const item of job.failed) {
+      if (item && item.url) {
+        failedMap.set(item.url, item.reason || "CORS/blocked");
+      }
+    }
+
+    if (!failedMap.size) {
+      return;
+    }
+
+    let changed = false;
+    for (const image of state.images) {
+      if (failedMap.has(image.url)) {
+        image.warning = `Blocked: ${failedMap.get(image.url)}`;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      renderGrid();
+    }
+  }
+
+  function renderBatchProgress(job) {
+    if (!dom.progressWrap || !dom.progressFill || !dom.progressTrack || !dom.progressLabel || !dom.progressPercent) {
+      return;
+    }
+
+    dom.progressWrap.classList.remove("active", "done", "error");
+
+    if (!job) {
+      dom.progressLabel.textContent = "";
+      dom.progressPercent.textContent = "";
+      dom.progressFill.style.width = "0%";
+      dom.progressTrack.setAttribute("aria-valuenow", "0");
+      return;
+    }
+
+    const percent = resolveBatchPercent(job);
+    dom.progressWrap.classList.add("active");
+
+    if (job.status === "done") {
+      dom.progressWrap.classList.add("done");
+    } else if (job.status === "error") {
+      dom.progressWrap.classList.add("error");
+    }
+
+    dom.progressLabel.textContent = buildBatchLabel(job);
+    dom.progressPercent.textContent = `${percent}%`;
+    dom.progressFill.style.width = `${percent}%`;
+    dom.progressTrack.setAttribute("aria-valuenow", String(percent));
+  }
+
+  function buildBatchLabel(job) {
+    if (!job) {
+      return "";
+    }
+
+    if (job.status === "done") {
+      return "Completed";
+    }
+
+    if (job.status === "error") {
+      return job.error || "Failed";
+    }
+
+    const total = Number(job.total) || 0;
+    const processed = Math.min(Number(job.processed) || 0, total);
+
+    if ((job.phase || "").toLowerCase().startsWith("fetching") && total) {
+      return `Fetching ${processed}/${total}`;
+    }
+
+    return job.phase || "Preparing";
+  }
+
+  function resolveBatchPercent(job) {
+    if (!job) {
+      return 0;
+    }
+
+    if (job.status === "done") {
+      return 100;
+    }
+
+    const fromJob = clampPercent(Number(job.progress) || 0);
+    const total = Number(job.total) || 0;
+    const processed = Math.min(Number(job.processed) || 0, total);
+    const derived = total ? clampPercent(Math.round((processed / total) * 90)) : 0;
+    return Math.max(fromJob, derived);
+  }
+
+  function syncDownloadButtonState() {
+    if (!dom.downloadAll) {
+      return;
+    }
+
+    if (state.batchJob && isBatchRunning(state.batchJob)) {
+      const total = Number(state.batchJob.total) || 0;
+      const processed = Math.min(Number(state.batchJob.processed) || 0, total);
+      dom.downloadAll.disabled = true;
+      dom.downloadAll.textContent = total ? `Downloading ${processed}/${total}` : "Downloading...";
+      return;
+    }
+
+    dom.downloadAll.disabled = !state.images.length;
+    dom.downloadAll.textContent = "Download All";
+  }
+
+  function isBatchRunning(job) {
+    return Boolean(job && job.status === "running");
   }
 
   async function copyText(value, successMessage) {
@@ -432,6 +614,8 @@
       dom.gridWrap.classList.add("hidden");
       dom.empty.classList.remove("active");
     }
+
+    syncDownloadButtonState();
   }
 
   function showEmpty(message) {
@@ -462,6 +646,15 @@
         dom.status.classList.remove("error");
       }, 4200);
     }
+  }
+
+  function clearStatus() {
+    if (statusTimer) {
+      clearTimeout(statusTimer);
+      statusTimer = null;
+    }
+    dom.status.textContent = "";
+    dom.status.classList.remove("error");
   }
 
   function getFilterCategory(format) {
@@ -553,6 +746,19 @@
     return tag === "input" || tag === "textarea" || target.isContentEditable;
   }
 
+  function clampPercent(value) {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+    if (value < 0) {
+      return 0;
+    }
+    if (value > 100) {
+      return 100;
+    }
+    return Math.round(value);
+  }
+
   function toErrorMessage(error) {
     if (!error) {
       return "Unknown error";
@@ -563,3 +769,4 @@
     return error.message || String(error);
   }
 })();
+
