@@ -1,0 +1,73 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Haroone Image Extractor</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="title-row">
+        <div class="brand">
+          <span class="brand-icon" aria-hidden="true"><img src="icons/logo.svg" alt=""></span>
+          <h1>Haroone Image Extractor</h1>
+        </div>
+
+        <div class="header-tools">
+          <div id="countBadge" class="count-badge">0 images found</div>
+          <button id="rescanBtn" class="mini-btn" title="Rescan page" aria-label="Rescan page">↻</button>
+        </div>
+      </div>
+
+      <label class="search-wrap" for="searchInput">
+        <input id="searchInput" type="search" placeholder="Filter by filename or URL keyword" autocomplete="off">
+      </label>
+    </header>
+
+    <nav class="filter-bar" aria-label="Format filter">
+      <button class="filter-btn active" data-format="ALL">ALL</button>
+      <button class="filter-btn" data-format="JPG">JPG</button>
+      <button class="filter-btn" data-format="PNG">PNG</button>
+      <button class="filter-btn" data-format="SVG">SVG</button>
+      <button class="filter-btn" data-format="GIF">GIF</button>
+      <button class="filter-btn" data-format="WEBP">WEBP</button>
+      <button class="filter-btn" data-format="OTHER">OTHER</button>
+    </nav>
+
+    <section class="content">
+      <div id="loadingState" class="state active">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Scanning this page for images...</p>
+      </div>
+
+      <div id="emptyState" class="state">
+        <svg viewBox="0 0 80 80" class="empty-art" aria-hidden="true">
+          <rect x="8" y="12" width="64" height="48" rx="8"></rect>
+          <circle cx="27" cy="28" r="6"></circle>
+          <path d="M16 54L32 38L44 50L53 41L64 54"></path>
+        </svg>
+        <p id="emptyMessage">No images found on this page.</p>
+      </div>
+
+      <div id="gridWrapper" class="grid-wrapper hidden">
+        <div id="imageGrid" class="image-grid" role="list"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-row actions-row">
+        <button id="downloadAllBtn" class="btn btn-primary">Download All</button>
+        <button id="copyAllBtn" class="btn btn-secondary">Copy All URLs</button>
+      </div>
+
+      <p id="statusText" class="status" aria-live="polite"></p>
+      <p class="builder-note"><a href="https://haroone.com" target="_blank" rel="noopener noreferrer">haroone.com</a> • Built by Haroone</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+
