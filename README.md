@@ -27,7 +27,11 @@ Built by Haroone.
 - Auto theme support (light/dark based on browser/system)
 - Filter buttons auto-hide when no images exist for that type
 
-## Screenshots`r`n`r`n![Haroone Image Extractor Banner](Haroone-Image-Extractor-banner.jpg)`r`n`r`n![Haroone Image Extractor](Haroone-Image-Extractor)
+## Screenshots
+
+![Haroone Image Extractor Banner](./assets/images/Haroone-Image-Extractor-banner.jpg)
+
+![Haroone Image Extractor - Light and Dark Popup](./assets/images/Haroone-Image-Extractor.jpg)
 
 ## Install (Unpacked)
 
@@ -105,4 +109,5 @@ You can also package manually from the extension folder root.
 ## License
 
 Choose a license and add a `LICENSE` file (MIT is a common choice).
+
 
