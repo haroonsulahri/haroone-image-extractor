@@ -637,13 +637,15 @@
       statusTimer = null;
     }
 
+    const hasMessage = Boolean(message);
     dom.status.textContent = message || "";
-    dom.status.classList.toggle("error", Boolean(isError));
+    dom.status.classList.toggle("active", hasMessage);
+    dom.status.classList.toggle("error", hasMessage && Boolean(isError));
 
-    if (autoClear && message) {
+    if (autoClear && hasMessage) {
       statusTimer = setTimeout(() => {
         dom.status.textContent = "";
-        dom.status.classList.remove("error");
+        dom.status.classList.remove("active", "error");
       }, 4200);
     }
   }
@@ -654,7 +656,7 @@
       statusTimer = null;
     }
     dom.status.textContent = "";
-    dom.status.classList.remove("error");
+    dom.status.classList.remove("active", "error");
   }
 
   function getFilterCategory(format) {
@@ -769,4 +771,5 @@
     return error.message || String(error);
   }
 })();
+
 
