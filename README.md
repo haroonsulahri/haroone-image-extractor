@@ -1,66 +1,74 @@
 ﻿# Haroone Image Extractor
-![Haroone Image Extractor Banner](./assets/images/Haroone-Image-Extractor-banner.jpg)
 
-A Chrome Extension to extract images from the current webpage, preview them, and download them individually or as a ZIP.
+Haroone Image Extractor is a Manifest V3 Chrome extension that extracts images from the current webpage, previews them in a fast grid, and downloads single images or all images as a ZIP.
 
 Built by Haroone.
 
-## Features
+## Screenshots
 
-- Extracts images from:
-  - `img` tags (`src`, `srcset`, lazy-loading attributes)
-  - `picture` / `source` elements
-  - CSS background images (inline + computed styles)
-  - Inline SVG and SVG image sources
-  - Canvas (`toDataURL`) exports
-  - Shadow DOM trees
-  - Same-origin iframes
-  - Open Graph and Twitter meta image tags
-  - JSON-LD image fields
-  - Favicons and Apple touch icons
-- URL normalization to absolute URLs
-- Deduplication of duplicate URLs
-- Format detection (`jpg`, `png`, `svg`, `gif`, `webp`, `ico`, `avif`, `bmp`, `other`)
-- Fast popup image grid with search and format filters
-- Single image download
-- `Download All` as ZIP
-- Per-image URL copy action
-- Auto theme support (light/dark based on browser/system)
-- Filter buttons auto-hide when no images exist for that type
-
-## Screenshot
+![Haroone Image Extractor Banner](./assets/images/Haroone-Image-Extractor-banner.jpg)
 
 ![Haroone Image Extractor - Light and Dark Popup](./assets/images/Haroone-Image-Extractor.jpg)
 
+## Features
+
+- Extracts images from `img`, `picture/source`, CSS backgrounds, inline SVG, canvas exports, meta tags, JSON-LD, favicons, and same-origin iframes/shadow DOM.
+- Normalizes URLs and deduplicates repeated image links.
+- Detects common formats (`jpg`, `png`, `gif`, `webp`, `svg`, `ico`, `avif`, `bmp`).
+- Search + format filters in the popup.
+- One-click single image download.
+- `Download All` ZIP export with progress.
+- Download-all progress continues in the background when popup closes.
+- Auto light/dark popup theme.
+
 ## Install (Unpacked)
 
-1. Open Chrome: `chrome://extensions`
-2. Enable `Developer mode`
-3. Click `Load unpacked`
-4. Select the extension folder:
-   - `E:\Chrome Extension\haroone-image-extractor`
+1. Open Chrome and go to `chrome://extensions`.
+2. Enable `Developer mode`.
+3. Click `Load unpacked`.
+4. Select the cloned/downloaded `haroone-image-extractor` folder.
 
 ## Usage
 
 1. Open any webpage.
 2. Click **Haroone Image Extractor** in the Chrome toolbar.
-3. Wait for scan to complete.
-4. Use search/filter if needed.
-5. Download an image from each card, or click **Download All** to export ZIP.
+3. Wait for indexing to complete.
+4. Filter/search if needed.
+5. Download a single image from a card or click **Download All**.
 
 ## Permissions
 
-- `activeTab`: Access current tab context
-- `scripting`: Inject scanner script when needed
-- `downloads`: Save images/ZIP files
-- `storage`: Reserved for extension state/settings
-- Host permissions: `<all_urls>` for page image extraction
+- `activeTab`: access the active tab on user interaction.
+- `scripting`: inject scanner script when needed.
+- `downloads`: save images and ZIP files.
+- `storage`: persist in-progress batch download state.
+- `content_scripts` runs on `<all_urls>` to keep scan startup fast.
 
-## Privacy
+## Known Limitations
 
-- No backend/server calls for analytics or tracking.
-- Image processing happens in the browser/extension context.
-- Downloads are triggered by explicit user actions.
+- Cross-origin iframe content is readable only when same-origin policies allow it.
+- Some protected images may fail fetch/download due to auth/CORS restrictions.
+- Canvas export can fail on tainted canvases created from restricted cross-origin sources.
+- Very large pages may take longer to index and ZIP.
+
+## Build / Package
+
+1. Keep `manifest.json` at the extension root.
+2. Zip the extension root contents (not an outer parent folder).
+3. Upload the ZIP to the Chrome Web Store Developer Dashboard.
+
+## Chrome Web Store Notes
+
+- Developer registration fee is one-time (`$5 USD`).
+- Keep permissions minimal and clearly documented for review.
+
+## Recommended GitHub Topics
+
+- `chrome-extension`
+- `browser-extension`
+- `manifest-v3`
+- `image-downloader`
+- `image-extractor`
 
 ## Project Structure
 
@@ -73,40 +81,10 @@ haroone-image-extractor/
 ├── popup.js
 ├── popup.css
 ├── icons/
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   ├── icon64.png
-│   ├── icon128.png
-│   └── logo.svg
-└── libs/
-    └── jszip.min.js
+├── libs/
+└── assets/images/
 ```
-
-## Build / Package
-
-To create a release ZIP for upload:
-
-- Current package name:
-  - `E:\Chrome Extension\haroone-image-extractor.zip`
-
-You can also package manually from the extension folder root.
-
-## Publish to Chrome Web Store
-
-1. Register a developer account (one-time fee).
-2. Upload `haroone-image-extractor.zip` in the dashboard.
-3. Complete store listing, privacy declarations, and distribution settings.
-4. Submit for review.
-
-## Development Notes
-
-- Manifest Version: `3`
-- Tech: Vanilla JavaScript + CSS
-- ZIP generation: bundled `JSZip` (`libs/jszip.min.js`)
 
 ## License
 
-Choose a license and add a `LICENSE` file (MIT is a common choice).
-
-
+MIT License. See [LICENSE](./LICENSE).

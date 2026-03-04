@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "description": "Export any type of image from any webpage. Extract, preview, copy URLs, and download images including JPG, PNG, SVG, GIF, WEBP, AVIF, icons, canvas, background images, and lazy-loaded sources. Built by Haroone.",
   "permissions": ["activeTab", "scripting", "downloads", "storage"],
-  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Haroone Image Extractor",
