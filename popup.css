@@ -487,8 +487,11 @@ body {
 }
 
 .status.active {
-  display: block;
-  margin: 3px 0 0;
+  text-align: center;
+  width: 100%;
+  padding: 6px 0;
+  margin: 4px 0;
+  line-height: 1.35;
 }
 
 .status.error {
@@ -653,6 +656,7 @@ a:focus-visible {
   outline: 2px solid var(--accent-hover);
   outline-offset: 2px;
 }
+
 
 
 
