@@ -1,5 +1,5 @@
 ﻿# Haroone Image Extractor
-![Haroone Image Extractor Banner](./assets/images/Haroone-Image-Extractor-banner.jpg)
+![Haroone Image Extractor Banner](./assets/images/Image-Extractor-banner.jpg)
 
 Haroone Image Extractor is a Manifest V3 Chrome extension that extracts images from the current webpage, previews them in a fast grid, and downloads single images or all images as a ZIP.
 
@@ -7,7 +7,7 @@ Built by Haroone.
 
 ## Screenshot
 
-![Haroone Image Extractor - Light and Dark Popup](./assets/images/Haroone-Image-Extractor.jpg)
+![Haroone Image Extractor - Light and Dark Popup](./assets/images/Image-Extractor.jpg)
 
 ## Features
 
