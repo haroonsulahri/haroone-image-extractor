@@ -1,4 +1,5 @@
 ﻿# Haroone Image Extractor
+![Haroone Image Extractor Banner](./assets/images/Haroone-Image-Extractor-banner.jpg)
 
 A Chrome Extension to extract images from the current webpage, preview them, and download them individually or as a ZIP.
 
@@ -27,9 +28,7 @@ Built by Haroone.
 - Auto theme support (light/dark based on browser/system)
 - Filter buttons auto-hide when no images exist for that type
 
-## Screenshots
-
-![Haroone Image Extractor Banner](./assets/images/Haroone-Image-Extractor-banner.jpg)
+## Screenshot
 
 ![Haroone Image Extractor - Light and Dark Popup](./assets/images/Haroone-Image-Extractor.jpg)
 
