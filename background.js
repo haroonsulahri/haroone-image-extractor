@@ -1,7 +1,7 @@
 ﻿"use strict";
 
 try {
-  importScripts("libs/jszip.min.js");
+  importScripts("libs/zip-writer.js");
 } catch (_) {}
 
 const MIME = {
@@ -89,8 +89,8 @@ async function downloadOne(image) {
 }
 
 async function startBatchJob(images) {
-  if (typeof JSZip !== "function") {
-    throw new Error("JSZip unavailable");
+  if (typeof StoredZipWriter !== "function") {
+    throw new Error("ZIP writer unavailable");
   }
 
   const normalized = normalizeBatchImages(images);
@@ -136,7 +136,7 @@ async function runBatchJob(jobId, images) {
     return;
   }
 
-  const zip = new JSZip();
+  const zip = new StoredZipWriter();
   const used = new Set();
 
   try {
@@ -215,28 +215,41 @@ async function runBatchJob(jobId, images) {
         conflictAction: "uniquify",
         saveAs: false
       });
-      void downloadId;
+      activeBatchJob.downloadId = downloadId;
     } finally {
       downloadable.revoke();
     }
 
-    await clearBatchJobState();
-  } catch (_) {
+    activeBatchJob.status = "done";
+    activeBatchJob.phase = "Completed";
+    activeBatchJob.progress = 100;
+    activeBatchJob.currentUrl = "";
+    activeBatchJob.updatedAt = Date.now();
+    activeBatchJob.finishedAt = activeBatchJob.updatedAt;
+    await persistJob();
+  } catch (error) {
     if (!isCurrentJob(jobId)) {
       return;
     }
-    await clearBatchJobState();
+
+    activeBatchJob.status = "error";
+    activeBatchJob.phase = "Failed";
+    activeBatchJob.error = msg(error);
+    activeBatchJob.currentUrl = "";
+    activeBatchJob.updatedAt = Date.now();
+    activeBatchJob.finishedAt = activeBatchJob.updatedAt;
+    await persistJob();
   }
 }
 
 async function getBatchJobStatus() {
-  if (activeBatchJob && activeBatchJob.status === "running") {
+  if (activeBatchJob) {
     return snapshotJob(activeBatchJob);
   }
 
   const stored = await chrome.storage.local.get(JOB_STORAGE_KEY);
   const persisted = stored && stored[JOB_STORAGE_KEY];
-  if (!persisted || persisted.status !== "running") {
+  if (!persisted) {
     return null;
   }
 
@@ -248,18 +261,26 @@ async function restorePersistedJob() {
   try {
     const stored = await chrome.storage.local.get(JOB_STORAGE_KEY);
     const persisted = stored && stored[JOB_STORAGE_KEY];
-    if (!persisted || persisted.status !== "running") {
-      await chrome.storage.local.remove(JOB_STORAGE_KEY);
+    if (!persisted) {
       return;
     }
 
-    activeBatchJob = null;
-    await chrome.storage.local.remove(JOB_STORAGE_KEY);
+    activeBatchJob = persisted;
+
+    if (activeBatchJob.status === "running") {
+      activeBatchJob.status = "error";
+      activeBatchJob.phase = "Interrupted";
+      activeBatchJob.error = "The background worker restarted. Start the ZIP download again.";
+      activeBatchJob.currentUrl = "";
+      activeBatchJob.updatedAt = Date.now();
+      activeBatchJob.finishedAt = activeBatchJob.updatedAt;
+      await persistJob();
+    }
   } catch (_) {}
 }
 
 async function persistJob() {
-  if (!activeBatchJob || activeBatchJob.status !== "running") {
+  if (!activeBatchJob) {
     await chrome.storage.local.remove(JOB_STORAGE_KEY);
     return;
   }
@@ -267,11 +288,6 @@ async function persistJob() {
   await chrome.storage.local.set({
     [JOB_STORAGE_KEY]: snapshotJob(activeBatchJob)
   });
-}
-
-async function clearBatchJobState() {
-  activeBatchJob = null;
-  await chrome.storage.local.remove(JOB_STORAGE_KEY);
 }
 
 function snapshotJob(job) {

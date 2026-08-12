@@ -1,0 +1,45 @@
+name: Extension quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate manifest and referenced files
+        run: node dev/validate-extension.mjs
+
+      - name: Check JavaScript syntax
+        run: find . -type f -name '*.js' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
+
+      - name: Test stored ZIP writer
+        run: node dev/zip-writer-smoke.mjs
+
+      - name: Build Chrome package
+        run: |
+          version="$(node -p "require('./manifest.json').version")"
+          mkdir -p dist
+          zip -r "dist/haroone-image-extractor-${version}.zip" \
+            manifest.json background.js content.js popup.html popup.css popup.js icons libs
+
+      - name: Upload verified package
+        uses: actions/upload-artifact@v4
+        with:
+          name: haroone-image-extractor
+          path: dist/*.zip
+          if-no-files-found: error

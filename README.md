@@ -1,6 +1,9 @@
 ﻿# Haroone Image Extractor
 ![Haroone Image Extractor Banner](./assets/images/Image-Extractor-banner.jpg)
 
+[![Extension quality](https://github.com/haroonsulahri/haroone-image-extractor/actions/workflows/quality.yml/badge.svg)](https://github.com/haroonsulahri/haroone-image-extractor/actions/workflows/quality.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2563eb.svg)](LICENSE)
+
 Haroone Image Extractor is a Manifest V3 Chrome extension that extracts images from the current webpage, previews them in a fast grid, and downloads single images or all images as a ZIP.
 
 Built by Haroone.
@@ -41,7 +44,8 @@ Built by Haroone.
 - `scripting`: inject scanner script when needed.
 - `downloads`: save images and ZIP files.
 - `storage`: persist in-progress batch download state.
-- `content_scripts` runs on `<all_urls>` to keep scan startup fast.
+
+The extension does not request persistent host access. Opening the popup temporarily grants access to the active tab, and the scanner is injected on demand.
 
 ## Known Limitations
 
@@ -80,10 +84,14 @@ haroone-image-extractor/
 ├── popup.js
 ├── popup.css
 ├── icons/
-├── libs/
+├── libs/zip-writer.js
 └── assets/images/
 ```
 
 ## License
 
 MIT License. See [LICENSE](./LICENSE).
+
+## Privacy
+
+Image discovery, fetching, and ZIP creation happen locally in the browser. The extension does not use analytics or send extracted URLs to an external service. See [PRIVACY.md](./PRIVACY.md).

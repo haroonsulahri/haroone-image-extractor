@@ -1,9 +1,14 @@
-﻿{
+{
   "manifest_version": 3,
   "name": "Haroone Image Extractor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Export any type of image from any webpage. Extract, preview, copy URLs, and download images including JPG, PNG, SVG, GIF, WEBP, AVIF, icons, canvas, background images, and lazy-loaded sources. Built by Haroone.",
-  "permissions": ["activeTab", "scripting", "downloads", "storage"],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "storage"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Haroone Image Extractor",
@@ -14,13 +19,6 @@
       "128": "icons/icon128.png"
     }
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "background": {
     "service_worker": "background.js"
   },
