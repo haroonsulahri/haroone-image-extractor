@@ -467,13 +467,18 @@
   function applyBatchJob(job) {
     const previous = state.batchJob;
     const wasRunning = isBatchRunning(previous);
-    state.batchJob = isBatchRunning(job) ? job : null;
+    state.batchJob = job || null;
+
+    applyFailureWarnings(state.batchJob);
 
     renderBatchProgress(state.batchJob);
     syncDownloadButtonState();
 
-    if (wasRunning && !state.batchJob) {
-      clearStatus();
+    if (wasRunning && state.batchJob && state.batchJob.status === "done") {
+      const failed = Number(state.batchJob.failedCount) || 0;
+      setStatus(failed ? `ZIP download started. ${failed} image(s) were blocked.` : "ZIP download started.", false, false);
+    } else if (state.batchJob && state.batchJob.status === "error") {
+      setStatus(state.batchJob.error || "ZIP download failed.", true, false);
     }
   }
 
@@ -496,8 +501,11 @@
     let changed = false;
     for (const image of state.images) {
       if (failedMap.has(image.url)) {
-        image.warning = `Blocked: ${failedMap.get(image.url)}`;
-        changed = true;
+        const warning = `Blocked: ${failedMap.get(image.url)}`;
+        if (image.warning !== warning) {
+          image.warning = warning;
+          changed = true;
+        }
       }
     }
 

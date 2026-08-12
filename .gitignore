@@ -6,6 +6,7 @@ desktop.ini
 # Editors
 .vscode/
 .idea/
+.playwright-cli/
 
 # Logs/temp
 *.log
